@@ -4,7 +4,6 @@ use byteorder::{ReadBytesExt, LittleEndian};
 use std::fs::File;
 use std::io::SeekFrom;
 use std::io::prelude::*;
-use std::io::Write;
 
 #[derive(Debug)]
 struct TpcbKeyFrame {
@@ -31,9 +30,9 @@ struct ShanFile {
 
 fn read_tpcb_file(file : &mut File, id : u16) -> TpcbAnim {
     let start = (file.seek(SeekFrom::Current(4)).unwrap() - 4) as u32;
-    let mut sectionOffsets = [0u32; 2];
-    file.read_u32_into::<LittleEndian>(&mut sectionOffsets).unwrap();
-    file.seek(SeekFrom::Current(4));
+    let mut section_offsets = [0u32; 2];
+    file.read_u32_into::<LittleEndian>(&mut section_offsets).unwrap();
+    file.seek(SeekFrom::Current(4)).unwrap();
     let mut unk_shorts = [0u16; 2];
     let mut unk_ints = [0u32; 3];
     let mut unk_floats = [0f32; 12];
@@ -44,12 +43,12 @@ fn read_tpcb_file(file : &mut File, id : u16) -> TpcbAnim {
     let mut unk_floats2 = [0f32; 2];
     file.read_f32_into::<LittleEndian>(&mut unk_floats2).unwrap();
     
-    let keyCount = file.read_u32::<LittleEndian>().unwrap();
+    let key_count = file.read_u32::<LittleEndian>().unwrap();
     let mut animation : Vec<TpcbKeyFrame> = vec![];
-    for i in 0..keyCount {
-        file.seek(SeekFrom::Start((start + sectionOffsets[0] + (i * 2)) as u64));
+    for i in 0..key_count {
+        file.seek(SeekFrom::Start((start + section_offsets[0] + (i * 2)) as u64)).unwrap();
         let frame = file.read_u16::<LittleEndian>().unwrap();
-        file.seek(SeekFrom::Start((start + sectionOffsets[1] + (i * 0xC)) as u64));
+        file.seek(SeekFrom::Start((start + section_offsets[1] + (i * 0xC)) as u64)).unwrap();
         let mut data = [0u8; 0xC];
         file.read(&mut data).unwrap();
         animation.push(TpcbKeyFrame { frame, data });
@@ -60,16 +59,16 @@ fn read_tpcb_file(file : &mut File, id : u16) -> TpcbAnim {
 
 fn read_shan_file(file_name : &str) -> ShanFile {
     let mut file = File::open(file_name).unwrap();
-    file.seek(SeekFrom::Start(4));
+    file.seek(SeekFrom::Start(4)).unwrap();
     let default_id = file.read_u32::<LittleEndian>().unwrap();
-    let animCount = file.read_u32::<LittleEndian>().unwrap();
+    let anim_count = file.read_u32::<LittleEndian>().unwrap();
     let mut animations : Vec<TpcbAnim> = vec![];
-    for i in 0..animCount {
-        file.seek(SeekFrom::Start((0x80 + (i * 4)) as u64));
+    for i in 0..anim_count {
+        file.seek(SeekFrom::Start((0x80 + (i * 4)) as u64)).unwrap();
         let id = file.read_u16::<LittleEndian>().unwrap();
-        file.seek(SeekFrom::Start((0x80 + (animCount * 4) + (i * 4)) as u64));
-        let animOffset = file.read_u32::<LittleEndian>().unwrap();
-        file.seek(SeekFrom::Start(animOffset as u64));
+        file.seek(SeekFrom::Start((0x80 + (anim_count * 4) + (i * 4)) as u64)).unwrap();
+        let anim_offset = file.read_u32::<LittleEndian>().unwrap();
+        file.seek(SeekFrom::Start(anim_offset as u64)).unwrap();
         animations.push(read_tpcb_file(&mut file, id));
     }
     
@@ -77,6 +76,6 @@ fn read_shan_file(file_name : &str) -> ShanFile {
 }
 
 fn main() {
-    let shanFile = read_shan_file("C:\\Users\\jam1m\\Documents\\MEGAsync Downloads\\SHAN\\0x1e4e60c78.shan");
-    println!("{:#?}", shanFile);
+    let shan_file = read_shan_file("C:\\Users\\jam1m\\Documents\\MEGAsync Downloads\\SHAN\\0x1e4e60c78.shan");
+    println!("{:#?}", shan_file);
 }
