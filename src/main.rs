@@ -4,6 +4,7 @@ use byteorder::{ReadBytesExt, LittleEndian};
 use std::fs::File;
 use std::io::SeekFrom;
 use std::io::prelude::*;
+use std::env;
 
 #[derive(Debug)]
 struct TpcbKeyFrame {
@@ -76,6 +77,11 @@ fn read_shan_file(file_name : &str) -> ShanFile {
 }
 
 fn main() {
-    let shan_file = read_shan_file("C:\\Users\\jam1m\\Documents\\MEGAsync Downloads\\SHAN\\0x1e4e60c78.shan");
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        eprintln!("No file passed. Usage:\nshpcanim [file]\n");
+        return;
+    }
+    let shan_file = read_shan_file(&args[1]);
     println!("{:#?}", shan_file);
 }
